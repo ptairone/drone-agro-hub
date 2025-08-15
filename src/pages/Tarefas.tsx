@@ -1,11 +1,16 @@
-import { Plus, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, CheckCircle, Clock, AlertCircle, Edit } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { TarefaForm } from '@/components/forms/TarefaForm';
+import { useToast } from '@/hooks/use-toast';
 
 const Tarefas = () => {
-  const tarefas = [
+  const { toast } = useToast();
+  const [tarefas, setTarefas] = useState([
     {
       id: 1,
       titulo: "Verificar equipamentos antes do voo",
@@ -46,7 +51,11 @@ const Tarefas = () => {
       responsavel: "Ana Costa",
       projeto: "Geral"
     },
-  ];
+  ]);
+  
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTarefa, setEditingTarefa] = useState<any>(null);
 
   const getPrioridadeColor = (prioridade: string) => {
     switch (prioridade) {
@@ -74,6 +83,46 @@ const Tarefas = () => {
     }
   };
 
+  const handleCreateTarefa = (data: any) => {
+    const newTarefa = {
+      id: tarefas.length + 1,
+      ...data,
+    };
+    setTarefas([...tarefas, newTarefa]);
+    setIsCreateDialogOpen(false);
+    toast({
+      title: "Tarefa criada com sucesso!",
+      description: `Tarefa "${data.titulo}" foi adicionada ao sistema.`,
+    });
+  };
+
+  const handleEditTarefa = (data: any) => {
+    setTarefas(tarefas.map(tarefa => 
+      tarefa.id === editingTarefa.id 
+        ? { ...tarefa, ...data }
+        : tarefa
+    ));
+    setIsEditDialogOpen(false);
+    setEditingTarefa(null);
+    toast({
+      title: "Tarefa atualizada com sucesso!",
+      description: `Tarefa "${data.titulo}" foi atualizada.`,
+    });
+  };
+
+  const openEditDialog = (tarefa: any) => {
+    setEditingTarefa(tarefa);
+    setIsEditDialogOpen(true);
+  };
+
+  const toggleTarefaStatus = (id: number) => {
+    setTarefas(tarefas.map(tarefa => 
+      tarefa.id === id 
+        ? { ...tarefa, status: tarefa.status === 'concluida' ? 'pendente' : 'concluida' }
+        : tarefa
+    ));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -81,10 +130,23 @@ const Tarefas = () => {
           <h1 className="text-3xl font-bold text-foreground">Tarefas</h1>
           <p className="text-muted-foreground">Organize e acompanhe suas atividades</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Tarefa
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Tarefa
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Criar Nova Tarefa</DialogTitle>
+            </DialogHeader>
+            <TarefaForm 
+              onSubmit={handleCreateTarefa}
+              onCancel={() => setIsCreateDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4">
@@ -94,6 +156,7 @@ const Tarefas = () => {
               <Checkbox 
                 checked={tarefa.status === 'concluida'} 
                 className="mt-1"
+                onCheckedChange={() => toggleTarefaStatus(tarefa.id)}
               />
               
               <div className="flex-1 space-y-3">
@@ -121,13 +184,34 @@ const Tarefas = () => {
               </div>
               
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">Editar</Button>
+                <Button variant="outline" size="sm" onClick={() => openEditDialog(tarefa)}>
+                  <Edit className="h-4 w-4 mr-1" />
+                  Editar
+                </Button>
                 <Button size="sm">Detalhes</Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+          </DialogHeader>
+          {editingTarefa && (
+            <TarefaForm 
+              initialData={editingTarefa}
+              onSubmit={handleEditTarefa}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setEditingTarefa(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -1,10 +1,15 @@
-import { Plus, Phone, Mail, Calendar, TrendingUp } from 'lucide-react';
+import { Plus, Phone, Mail, Calendar, TrendingUp, Edit } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { LeadForm } from '@/components/forms/LeadForm';
+import { useToast } from '@/hooks/use-toast';
 
 const Leads = () => {
-  const leads = [
+  const { toast } = useToast();
+  const [leads, setLeads] = useState([
     {
       id: 1,
       nome: "Carlos Silva",
@@ -65,7 +70,11 @@ const Leads = () => {
       ultimoContato: "2024-01-09",
       observacoes: "Escolheu concorrente por questão de preço"
     },
-  ];
+  ]);
+  
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<any>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -95,6 +104,39 @@ const Leads = () => {
     return labels[status as keyof typeof labels] || status;
   };
 
+  const handleCreateLead = (data: any) => {
+    const newLead = {
+      id: leads.length + 1,
+      ...data,
+      ultimoContato: new Date().toISOString().split('T')[0],
+    };
+    setLeads([...leads, newLead]);
+    setIsCreateDialogOpen(false);
+    toast({
+      title: "Lead criado com sucesso!",
+      description: `Lead ${data.nome} foi adicionado ao sistema.`,
+    });
+  };
+
+  const handleEditLead = (data: any) => {
+    setLeads(leads.map(lead => 
+      lead.id === editingLead.id 
+        ? { ...lead, ...data }
+        : lead
+    ));
+    setIsEditDialogOpen(false);
+    setEditingLead(null);
+    toast({
+      title: "Lead atualizado com sucesso!",
+      description: `Lead ${data.nome} foi atualizado.`,
+    });
+  };
+
+  const openEditDialog = (lead: any) => {
+    setEditingLead(lead);
+    setIsEditDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -102,10 +144,23 @@ const Leads = () => {
           <h1 className="text-3xl font-bold text-foreground">Leads</h1>
           <p className="text-muted-foreground">Acompanhe e gerencie seus potenciais clientes</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Lead
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Lead
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Criar Novo Lead</DialogTitle>
+            </DialogHeader>
+            <LeadForm 
+              onSubmit={handleCreateLead}
+              onCancel={() => setIsCreateDialogOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4">
@@ -147,7 +202,10 @@ const Leads = () => {
               <div className="text-right space-y-2">
                 <p className="text-lg font-bold text-foreground">{lead.valorPotencial}</p>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">Editar</Button>
+                  <Button variant="outline" size="sm" onClick={() => openEditDialog(lead)}>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
                   <Button size="sm">Acompanhar</Button>
                 </div>
               </div>
@@ -155,6 +213,24 @@ const Leads = () => {
           </Card>
         ))}
       </div>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Lead</DialogTitle>
+          </DialogHeader>
+          {editingLead && (
+            <LeadForm 
+              initialData={editingLead}
+              onSubmit={handleEditLead}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setEditingLead(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
