@@ -1,6 +1,9 @@
-import { Calendar, CheckSquare, Users, BarChart3, Plane, Cloud } from 'lucide-react';
+import { Calendar, CheckSquare, Users, BarChart3, Plane, Cloud, Menu, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const menuItems = [
   {
@@ -30,11 +33,11 @@ const menuItems = [
   },
 ];
 
-export const Sidebar = () => {
+const SidebarContent = () => {
   const location = useLocation();
 
   return (
-    <div className="w-64 bg-card border-r border-border flex flex-col">
+    <div className="bg-card border-border flex flex-col h-full">
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary rounded-lg">
@@ -77,6 +80,31 @@ export const Sidebar = () => {
           © 2024 AgroDrone CRM
         </p>
       </div>
+    </div>
+  );
+};
+
+export const Sidebar = () => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="icon" className="fixed top-4 left-4 z-50 md:hidden">
+            <Menu className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-64">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <div className="w-64 border-r">
+      <SidebarContent />
     </div>
   );
 };

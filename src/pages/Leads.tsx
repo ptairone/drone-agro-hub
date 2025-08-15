@@ -100,9 +100,9 @@ const Leads = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Leads</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Leads</h1>
           <p className="text-muted-foreground">Acompanhe e gerencie seus potenciais clientes</p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -126,10 +126,10 @@ const Leads = () => {
 
       <div className="grid gap-4">
         {leads.map((lead) => (
-          <Card key={lead.id} className="p-6">
-            <div className="flex items-start justify-between">
+          <Card key={lead.id} className="p-4 md:p-6">
+            <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
               <div className="space-y-3 flex-1">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <h3 className="text-lg font-semibold text-foreground">{lead.nome}</h3>
                   <Badge className={getStatusColor(lead.status)}>
                     {getStatusLabel(lead.status)}
@@ -138,7 +138,7 @@ const Leads = () => {
                 
                 <p className="text-accent font-medium">{lead.empresa}</p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-muted-foreground">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4" />
                     {lead.email}
@@ -184,21 +184,24 @@ const Leads = () => {
                 <p className="text-sm text-muted-foreground">{lead.observacoes}</p>
               </div>
               
-              <div className="text-right space-y-2">
+              <div className="lg:text-right space-y-3">
                 <p className="text-lg font-bold text-foreground">{lead.valorPotencial}</p>
-                 <div className="flex gap-2">
+                 <div className="flex flex-wrap gap-2">
                    <Button variant="outline" size="sm" onClick={() => openEditDialog(lead)}>
                      <Edit className="h-4 w-4 mr-1" />
-                     Editar
+                     <span className="hidden sm:inline">Editar</span>
                    </Button>
-                   <Button size="sm">Acompanhar</Button>
+                   <Button size="sm">
+                     <span className="hidden sm:inline">Acompanhar</span>
+                     <span className="sm:hidden">Ver</span>
+                   </Button>
                    <Button 
                      variant="destructive" 
                      size="sm" 
                      onClick={() => handleDelete(lead)}
                    >
                      <Trash2 className="h-4 w-4 mr-1" />
-                     Excluir
+                     <span className="hidden sm:inline">Excluir</span>
                    </Button>
                  </div>
               </div>
