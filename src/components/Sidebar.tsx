@@ -1,0 +1,77 @@
+import { Calendar, CheckSquare, Users, BarChart3, Plane } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+
+const menuItems = [
+  {
+    title: 'Dashboard',
+    icon: BarChart3,
+    href: '/',
+  },
+  {
+    title: 'Agendamentos',
+    icon: Calendar,
+    href: '/agendamentos',
+  },
+  {
+    title: 'Tarefas',
+    icon: CheckSquare,
+    href: '/tarefas',
+  },
+  {
+    title: 'Leads',
+    icon: Users,
+    href: '/leads',
+  },
+];
+
+export const Sidebar = () => {
+  const location = useLocation();
+
+  return (
+    <div className="w-64 bg-card border-r border-border flex flex-col">
+      <div className="p-6 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary rounded-lg">
+            <Plane className="h-6 w-6 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-foreground">AgroDrone</h1>
+            <p className="text-sm text-muted-foreground">CRM Sistema</p>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.href;
+
+            return (
+              <li key={item.href}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    isActive && 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="font-medium">{item.title}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="p-4 border-t border-border">
+        <p className="text-xs text-muted-foreground text-center">
+          © 2024 AgroDrone CRM
+        </p>
+      </div>
+    </div>
+  );
+};
