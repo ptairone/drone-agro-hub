@@ -4,7 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Cloud, Droplets, Wind, Thermometer, Eye, AlertTriangle, CheckCircle, MapPin, RefreshCw } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Cloud, Droplets, Wind, Thermometer, Eye, AlertTriangle, CheckCircle, MapPin, RefreshCw, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import axios from 'axios';
 import { toast } from '@/components/ui/use-toast';
 
@@ -43,17 +49,65 @@ export default function Clima() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [city, setCity] = useState('São Paulo');
   const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedHour, setSelectedHour] = useState<string>('12');
 
-  const fetchWeatherData = async (cityName: string) => {
+  const fetchWeatherData = async (cityName: string, targetDate?: Date, targetHour?: string) => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric&lang=pt_br`
+      let url: string;
+      const now = new Date();
+      const isCurrentTime = !targetDate || (
+        targetDate.toDateString() === now.toDateString() && 
+        (!targetHour || targetHour === now.getHours().toString())
       );
-      setWeatherData(response.data);
+
+      if (isCurrentTime) {
+        // Usar current weather API para tempo atual
+        url = `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric&lang=pt_br`;
+      } else {
+        // Usar forecast API para previsões futuras
+        url = `https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&appid=${API_KEY}&units=metric&lang=pt_br`;
+      }
+
+      const response = await axios.get(url);
+      
+      if (isCurrentTime) {
+        setWeatherData(response.data);
+      } else {
+        // Encontrar a previsão mais próxima da data/hora selecionada
+        const targetDateTime = new Date(targetDate!);
+        if (targetHour) {
+          targetDateTime.setHours(parseInt(targetHour), 0, 0, 0);
+        }
+        
+        const forecasts = response.data.list;
+        let closestForecast = forecasts[0];
+        let minDiff = Math.abs(new Date(forecasts[0].dt * 1000).getTime() - targetDateTime.getTime());
+        
+        for (const forecast of forecasts) {
+          const forecastTime = new Date(forecast.dt * 1000);
+          const diff = Math.abs(forecastTime.getTime() - targetDateTime.getTime());
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestForecast = forecast;
+          }
+        }
+        
+        // Converter format do forecast para format do current weather
+        const adaptedData = {
+          ...closestForecast,
+          name: response.data.city.name,
+          sys: { country: response.data.city.country }
+        };
+        
+        setWeatherData(adaptedData);
+      }
+      
+      const timeText = isCurrentTime ? 'atual' : `prevista para ${format(targetDate!, 'dd/MM/yyyy', { locale: ptBR })} às ${targetHour || '12'}h`;
       toast({
         title: "Dados atualizados",
-        description: `Previsão do tempo para ${response.data.name} carregada com sucesso.`,
+        description: `Previsão do tempo ${timeText} para ${response.data.name || response.data.city?.name} carregada com sucesso.`,
       });
     } catch (error) {
       console.error('Erro ao buscar dados do tempo:', error);
@@ -73,8 +127,30 @@ export default function Clima() {
 
   const handleSearch = () => {
     if (city.trim()) {
+      fetchWeatherData(city.trim(), selectedDate, selectedHour);
+    }
+  };
+
+  const handleDateTimeSearch = () => {
+    if (city.trim() && selectedDate) {
+      fetchWeatherData(city.trim(), selectedDate, selectedHour);
+    }
+  };
+
+  const handleCurrentWeather = () => {
+    if (city.trim()) {
+      setSelectedDate(new Date());
+      setSelectedHour(new Date().getHours().toString());
       fetchWeatherData(city.trim());
     }
+  };
+
+  const getAvailableHours = () => {
+    const hours = [];
+    for (let i = 0; i < 24; i++) {
+      hours.push(i.toString().padStart(2, '0'));
+    }
+    return hours;
   };
 
   const windSpeedKmh = weatherData ? Math.round(weatherData.wind.speed * 3.6) : 0;
@@ -151,6 +227,78 @@ export default function Clima() {
             <Button onClick={handleSearch} disabled={loading}>
               {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Buscar'}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Seletor de data e hora */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5" />
+            Data e Horário da Previsão
+          </CardTitle>
+          <CardDescription>
+            Selecione uma data e hora específica para ver a previsão do tempo
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm font-medium">Data</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecionar data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    disabled={(date) =>
+                      date < new Date() || date > new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+                    }
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="flex flex-col space-y-2">
+              <label className="text-sm font-medium">Horário</label>
+              <Select value={selectedHour} onValueChange={setSelectedHour}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Hora" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailableHours().map((hour) => (
+                    <SelectItem key={hour} value={hour}>
+                      {hour}:00
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={handleDateTimeSearch} disabled={loading || !selectedDate}>
+                {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Clock className="h-4 w-4" />}
+                Buscar Previsão
+              </Button>
+              <Button variant="outline" onClick={handleCurrentWeather} disabled={loading}>
+                Tempo Atual
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
