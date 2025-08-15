@@ -2,8 +2,36 @@ import { Calendar, CheckSquare, Users, DollarSign, TrendingUp, Clock } from 'luc
 import { StatsCard } from '@/components/StatsCard';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useData } from '@/context/DataContext';
 
 const Dashboard = () => {
+  const { leads, agendamentos, tarefas } = useData();
+
+  // Calcular estatísticas dinâmicas
+  const leadsAtivos = leads.filter(lead => ['novo', 'qualificado', 'proposta'].includes(lead.status)).length;
+  const tarefasPendentes = tarefas.filter(tarefa => tarefa.status !== 'concluida').length;
+  const agendamentosHoje = agendamentos.filter(agendamento => {
+    const hoje = new Date().toISOString().split('T')[0];
+    return agendamento.data === hoje;
+  }).length;
+
+  // Calcular receita dos leads ganhos
+  const receitaTotal = leads
+    .filter(lead => lead.status === 'ganho')
+    .reduce((total, lead) => {
+      const valor = parseFloat(lead.valorPotencial.replace(/[R$\s.]/g, '').replace(',', '.'));
+      return total + (isNaN(valor) ? 0 : valor);
+    }, 0);
+
+  const formatarReceita = (valor: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(valor);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -14,25 +42,25 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Agendamentos Hoje"
-          value={8}
+          value={agendamentosHoje}
           icon={Calendar}
           trend={{ value: "12%", isPositive: true }}
         />
         <StatsCard
           title="Tarefas Pendentes"
-          value={23}
+          value={tarefasPendentes}
           icon={CheckSquare}
           trend={{ value: "5%", isPositive: false }}
         />
         <StatsCard
           title="Leads Ativos"
-          value={147}
+          value={leadsAtivos}
           icon={Users}
           trend={{ value: "18%", isPositive: true }}
         />
         <StatsCard
-          title="Receita Mensal"
-          value="R$ 45.2k"
+          title="Receita Fechada"
+          value={formatarReceita(receitaTotal)}
           icon={DollarSign}
           trend={{ value: "22%", isPositive: true }}
         />
@@ -76,12 +104,8 @@ const Dashboard = () => {
             <Button variant="outline" size="sm">Ver todos</Button>
           </div>
           <div className="space-y-4">
-            {[
-              { nome: "Carlos Silva", empresa: "Fazenda Vista Verde", status: "Novo", valor: "R$ 15.000" },
-              { nome: "Ana Costa", empresa: "Plantações do Norte", status: "Qualificado", valor: "R$ 22.500" },
-              { nome: "João Santos", empresa: "Agro Sustentável", status: "Proposta", valor: "R$ 8.750" },
-            ].map((lead, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            {leads.slice(0, 3).map((lead) => (
+              <div key={lead.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   <div>
@@ -90,13 +114,18 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-foreground">{lead.valor}</p>
+                  <p className="font-medium text-foreground">{lead.valorPotencial}</p>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    lead.status === 'Novo' ? 'bg-accent/10 text-accent' :
-                    lead.status === 'Qualificado' ? 'bg-warning/10 text-warning' :
-                    'bg-success/10 text-success'
+                    lead.status === 'novo' ? 'bg-accent/10 text-accent' :
+                    lead.status === 'qualificado' ? 'bg-warning/10 text-warning' :
+                    lead.status === 'proposta' ? 'bg-primary/10 text-primary' :
+                    lead.status === 'ganho' ? 'bg-success/10 text-success' :
+                    'bg-destructive/10 text-destructive'
                   }`}>
-                    {lead.status}
+                    {lead.status === 'novo' ? 'Novo' :
+                     lead.status === 'qualificado' ? 'Qualificado' :
+                     lead.status === 'proposta' ? 'Proposta' :
+                     lead.status === 'ganho' ? 'Ganho' : 'Perdido'}
                   </span>
                 </div>
               </div>

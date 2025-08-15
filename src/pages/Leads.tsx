@@ -1,4 +1,4 @@
-import { Plus, Phone, Mail, Calendar, TrendingUp, Edit, Trash2 } from 'lucide-react';
+import { Plus, Phone, Mail, Calendar, TrendingUp, Edit, Trash2, MapPin, Wheat } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -7,71 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { LeadForm } from '@/components/forms/LeadForm';
 import { useToast } from '@/hooks/use-toast';
+import { useData } from '@/context/DataContext';
 
 const Leads = () => {
   const { toast } = useToast();
-  const [leads, setLeads] = useState([
-    {
-      id: 1,
-      nome: "Carlos Silva",
-      empresa: "Fazenda Vista Verde",
-      email: "carlos@fazendalvistav verde.com.br",
-      telefone: "(16) 99999-1234",
-      status: "novo",
-      valorPotencial: "R$ 15.000",
-      fonte: "Site",
-      ultimoContato: "2024-01-14",
-      observacoes: "Interessado em serviços de pulverização para 200 hectares"
-    },
-    {
-      id: 2,
-      nome: "Ana Costa",
-      empresa: "Plantações do Norte",
-      email: "ana.costa@plantacoesnorte.com.br",
-      telefone: "(17) 98888-5678",
-      status: "qualificado",
-      valorPotencial: "R$ 22.500",
-      fonte: "Indicação",
-      ultimoContato: "2024-01-13",
-      observacoes: "Já trabalha com drones, quer expandir para mapeamento"
-    },
-    {
-      id: 3,
-      nome: "João Santos",
-      empresa: "Agro Sustentável",
-      email: "joao@agrosustentavel.com.br",
-      telefone: "(18) 97777-9012",
-      status: "proposta",
-      valorPotencial: "R$ 8.750",
-      fonte: "Facebook",
-      ultimoContato: "2024-01-12",
-      observacoes: "Solicitou proposta para monitoramento mensal"
-    },
-    {
-      id: 4,
-      nome: "Maria Oliveira",
-      empresa: "Fazenda Esperança",
-      email: "maria@fazendaesperanca.com.br",
-      telefone: "(19) 96666-3456",
-      status: "ganho",
-      valorPotencial: "R$ 18.000",
-      fonte: "WhatsApp",
-      ultimoContato: "2024-01-10",
-      observacoes: "Contrato fechado para serviços trimestrais"
-    },
-    {
-      id: 5,
-      nome: "Pedro Fernandes",
-      empresa: "Sítio Boa Vista",
-      email: "pedro@sitioboavista.com.br",
-      telefone: "(11) 95555-7890",
-      status: "perdido",
-      valorPotencial: "R$ 12.000",
-      fonte: "Google",
-      ultimoContato: "2024-01-09",
-      observacoes: "Escolheu concorrente por questão de preço"
-    },
-  ]);
+  const { leads, addLead, updateLead, deleteLead } = useData();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -113,7 +53,7 @@ const Leads = () => {
       ...data,
       ultimoContato: new Date().toISOString().split('T')[0],
     };
-    setLeads([...leads, newLead]);
+    addLead(newLead);
     setIsCreateDialogOpen(false);
     toast({
       title: "Lead criado com sucesso!",
@@ -122,11 +62,8 @@ const Leads = () => {
   };
 
   const handleEditLead = (data: any) => {
-    setLeads(leads.map(lead => 
-      lead.id === editingLead.id 
-        ? { ...lead, ...data }
-        : lead
-    ));
+    const updatedLead = { ...editingLead, ...data };
+    updateLead(updatedLead);
     setIsEditDialogOpen(false);
     setEditingLead(null);
     toast({
@@ -147,7 +84,7 @@ const Leads = () => {
 
   const confirmDelete = () => {
     if (deletingLead) {
-      setLeads(leads.filter(l => l.id !== deletingLead.id));
+      deleteLead(deletingLead.id);
       toast({
         title: "Lead excluído",
         description: `O lead "${deletingLead.nome}" foi excluído com sucesso.`,
@@ -219,6 +156,30 @@ const Leads = () => {
                     <TrendingUp className="h-4 w-4" />
                     Fonte: {lead.fonte}
                   </div>
+                  {lead.hectares && (
+                    <div className="flex items-center gap-2">
+                      <Wheat className="h-4 w-4" />
+                      {lead.hectares} hectares
+                    </div>
+                  )}
+                  {lead.tipoCultura && (
+                    <div className="flex items-center gap-2">
+                      <Wheat className="h-4 w-4" />
+                      {lead.tipoCultura}
+                    </div>
+                  )}
+                  {lead.cidade && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      {lead.cidade}
+                    </div>
+                  )}
+                  {lead.localizacao && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      {lead.localizacao}
+                    </div>
+                  )}
                 </div>
                 
                 <p className="text-sm text-muted-foreground">{lead.observacoes}</p>

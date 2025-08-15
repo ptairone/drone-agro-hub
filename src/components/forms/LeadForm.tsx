@@ -16,6 +16,10 @@ const leadSchema = z.object({
   valorPotencial: z.string().min(1, 'Valor potencial é obrigatório'),
   fonte: z.string().min(1, 'Fonte é obrigatória'),
   observacoes: z.string().optional(),
+  hectares: z.string().optional(),
+  tipoCultura: z.string().optional(),
+  cidade: z.string().optional(),
+  localizacao: z.string().optional(),
 });
 
 type LeadFormData = z.infer<typeof leadSchema>;
@@ -38,6 +42,10 @@ export const LeadForm = ({ initialData, onSubmit, onCancel }: LeadFormProps) => 
       valorPotencial: initialData?.valorPotencial || '',
       fonte: initialData?.fonte || '',
       observacoes: initialData?.observacoes || '',
+      hectares: initialData?.hectares || '',
+      tipoCultura: initialData?.tipoCultura || '',
+      cidade: initialData?.cidade || '',
+      localizacao: initialData?.localizacao || '',
     },
   });
 
@@ -153,6 +161,62 @@ export const LeadForm = ({ initialData, onSubmit, onCancel }: LeadFormProps) => 
                 <FormLabel>Fonte</FormLabel>
                 <FormControl>
                   <Input placeholder="Site, WhatsApp, Indicação..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="hectares"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Hectares</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: 200" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="tipoCultura"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo de Cultura</FormLabel>
+                <FormControl>
+                  <Input placeholder="Soja, Milho, Café..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cidade"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cidade</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome da cidade" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="localizacao"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Localização</FormLabel>
+                <FormControl>
+                  <Input placeholder="Endereço, referência..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
