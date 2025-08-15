@@ -47,13 +47,12 @@ const Leads = () => {
     return labels[status as keyof typeof labels] || status;
   };
 
-  const handleCreateLead = (data: any) => {
-    const newLead = {
-      id: leads.length + 1,
+  const handleCreateLead = async (data: any) => {
+    const leadData = {
       ...data,
       ultimoContato: new Date().toISOString().split('T')[0],
     };
-    addLead(newLead);
+    await addLead(leadData);
     setIsCreateDialogOpen(false);
     toast({
       title: "Lead criado com sucesso!",
@@ -61,9 +60,9 @@ const Leads = () => {
     });
   };
 
-  const handleEditLead = (data: any) => {
+  const handleEditLead = async (data: any) => {
     const updatedLead = { ...editingLead, ...data };
-    updateLead(updatedLead);
+    await updateLead(updatedLead);
     setIsEditDialogOpen(false);
     setEditingLead(null);
     toast({
@@ -82,9 +81,9 @@ const Leads = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingLead) {
-      deleteLead(deletingLead.id);
+      await deleteLead(deletingLead.id);
       toast({
         title: "Lead excluído",
         description: `O lead "${deletingLead.nome}" foi excluído com sucesso.`,

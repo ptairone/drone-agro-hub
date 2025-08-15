@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 interface Lead {
   id: number;
@@ -41,15 +43,16 @@ interface DataContextType {
   leads: Lead[];
   agendamentos: Agendamento[];
   tarefas: Tarefa[];
-  addLead: (lead: Lead) => void;
-  updateLead: (lead: Lead) => void;
-  deleteLead: (id: number) => void;
-  addAgendamento: (agendamento: Agendamento) => void;
-  updateAgendamento: (agendamento: Agendamento) => void;
-  deleteAgendamento: (id: number) => void;
-  addTarefa: (tarefa: Tarefa) => void;
-  updateTarefa: (tarefa: Tarefa) => void;
-  deleteTarefa: (id: number) => void;
+  loading: boolean;
+  addLead: (lead: Omit<Lead, 'id'>) => Promise<void>;
+  updateLead: (lead: Lead) => Promise<void>;
+  deleteLead: (id: number) => Promise<void>;
+  addAgendamento: (agendamento: Omit<Agendamento, 'id'>) => Promise<void>;
+  updateAgendamento: (agendamento: Agendamento) => Promise<void>;
+  deleteAgendamento: (id: number) => Promise<void>;
+  addTarefa: (tarefa: Omit<Tarefa, 'id'>) => Promise<void>;
+  updateTarefa: (tarefa: Tarefa) => Promise<void>;
+  deleteTarefa: (id: number) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -67,126 +70,310 @@ interface DataProviderProps {
 }
 
 export const DataProvider = ({ children }: DataProviderProps) => {
-  const [leads, setLeads] = useState<Lead[]>([
-    {
-      id: 1,
-      nome: "Carlos Silva",
-      empresa: "Fazenda Vista Verde",
-      email: "carlos@fazendavistav verde.com.br",
-      telefone: "(16) 99999-1234",
-      status: "novo",
-      valorPotencial: "R$ 15.000",
-      fonte: "Site",
-      ultimoContato: "2024-01-14",
-      observacoes: "Interessado em serviços de pulverização para 200 hectares",
-      hectares: "200",
-      tipoCultura: "Soja",
-      cidade: "Ribeirão Preto",
-      localizacao: "Zona Rural - Fazenda"
-    },
-    {
-      id: 2,
-      nome: "Ana Costa",
-      empresa: "Plantações do Norte",
-      email: "ana.costa@plantacoesnorte.com.br",
-      telefone: "(17) 98888-5678",
-      status: "qualificado",
-      valorPotencial: "R$ 22.500",
-      fonte: "Indicação",
-      ultimoContato: "2024-01-13",
-      observacoes: "Já trabalha com drones, quer expandir para mapeamento",
-      hectares: "350",
-      tipoCultura: "Milho",
-      cidade: "Barretos",
-      localizacao: "Fazenda Santa Rita"
-    },
-    {
-      id: 3,
-      nome: "João Santos",
-      empresa: "Agro Sustentável",
-      email: "joao@agrosustentavel.com.br",
-      telefone: "(18) 97777-9012",
-      status: "proposta",
-      valorPotencial: "R$ 8.750",
-      fonte: "Facebook",
-      ultimoContato: "2024-01-12",
-      observacoes: "Solicitou proposta para monitoramento mensal",
-      hectares: "120",
-      tipoCultura: "Cana-de-açúcar",
-      cidade: "Araraquara",
-      localizacao: "Rodovia SP-255, Km 12"
-    },
-    {
-      id: 4,
-      nome: "Maria Oliveira",
-      empresa: "Fazenda Esperança",
-      email: "maria@fazendaesperanca.com.br",
-      telefone: "(19) 96666-3456",
-      status: "ganho",
-      valorPotencial: "R$ 18.000",
-      fonte: "WhatsApp",
-      ultimoContato: "2024-01-10",
-      observacoes: "Contrato fechado para serviços trimestrais",
-      hectares: "280",
-      tipoCultura: "Algodão",
-      cidade: "Campinas",
-      localizacao: "Distrito de Barão Geraldo"
-    },
-    {
-      id: 5,
-      nome: "Pedro Fernandes",
-      empresa: "Sítio Boa Vista",
-      email: "pedro@sitioboavista.com.br",
-      telefone: "(11) 95555-7890",
-      status: "perdido",
-      valorPotencial: "R$ 12.000",
-      fonte: "Google",
-      ultimoContato: "2024-01-09",
-      observacoes: "Escolheu concorrente por questão de preço",
-      hectares: "95",
-      tipoCultura: "Café",
-      cidade: "Franca",
-      localizacao: "Zona Rural"
-    },
-  ]);
-
+  const { toast } = useToast();
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addLead = (lead: Lead) => {
-    setLeads(prev => [...prev, lead]);
+  // Load data from Supabase on component mount
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  const loadAllData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load leads
+      const { data: leadsData, error: leadsError } = await supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (leadsError) throw leadsError;
+      
+      // Load agendamentos
+      const { data: agendamentosData, error: agendamentosError } = await supabase
+        .from('agendamentos')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (agendamentosError) throw agendamentosError;
+      
+      // Load tarefas
+      const { data: tarefasData, error: tarefasError } = await supabase
+        .from('tarefas')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (tarefasError) throw tarefasError;
+      
+      setLeads(leadsData || []);
+      setAgendamentos(agendamentosData || []);
+      setTarefas(tarefasData || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar os dados do servidor.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateLead = (updatedLead: Lead) => {
-    setLeads(prev => prev.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
+  const addLead = async (leadData: Omit<Lead, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .insert([{
+          nome: leadData.nome,
+          empresa: leadData.empresa,
+          email: leadData.email,
+          telefone: leadData.telefone,
+          status: leadData.status,
+          valor_potencial: leadData.valorPotencial,
+          fonte: leadData.fonte,
+          observacoes: leadData.observacoes,
+          hectares: leadData.hectares,
+          tipo_cultura: leadData.tipoCultura,
+          cidade: leadData.cidade,
+          localizacao: leadData.localizacao,
+          ultimo_contato: leadData.ultimoContato,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newLead = {
+        id: data.id,
+        nome: data.nome,
+        empresa: data.empresa,
+        email: data.email,
+        telefone: data.telefone,
+        status: data.status,
+        valorPotencial: data.valor_potencial,
+        fonte: data.fonte,
+        observacoes: data.observacoes,
+        hectares: data.hectares,
+        tipoCultura: data.tipo_cultura,
+        cidade: data.cidade,
+        localizacao: data.localizacao,
+        ultimoContato: data.ultimo_contato,
+      };
+
+      setLeads(prev => [newLead, ...prev]);
+    } catch (error) {
+      console.error('Error adding lead:', error);
+      toast({
+        title: "Erro ao adicionar lead",
+        description: "Não foi possível salvar o lead.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteLead = (id: number) => {
-    setLeads(prev => prev.filter(lead => lead.id !== id));
+  const updateLead = async (updatedLead: Lead) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({
+          nome: updatedLead.nome,
+          empresa: updatedLead.empresa,
+          email: updatedLead.email,
+          telefone: updatedLead.telefone,
+          status: updatedLead.status,
+          valor_potencial: updatedLead.valorPotencial,
+          fonte: updatedLead.fonte,
+          observacoes: updatedLead.observacoes,
+          hectares: updatedLead.hectares,
+          tipo_cultura: updatedLead.tipoCultura,
+          cidade: updatedLead.cidade,
+          localizacao: updatedLead.localizacao,
+          ultimo_contato: updatedLead.ultimoContato,
+        })
+        .eq('id', updatedLead.id);
+
+      if (error) throw error;
+
+      setLeads(prev => prev.map(lead => lead.id === updatedLead.id ? updatedLead : lead));
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      toast({
+        title: "Erro ao atualizar lead",
+        description: "Não foi possível atualizar o lead.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const addAgendamento = (agendamento: Agendamento) => {
-    setAgendamentos(prev => [...prev, agendamento]);
+  const deleteLead = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setLeads(prev => prev.filter(lead => lead.id !== id));
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast({
+        title: "Erro ao excluir lead",
+        description: "Não foi possível excluir o lead.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const updateAgendamento = (updatedAgendamento: Agendamento) => {
-    setAgendamentos(prev => prev.map(agendamento => agendamento.id === updatedAgendamento.id ? updatedAgendamento : agendamento));
+  const addAgendamento = async (agendamentoData: Omit<Agendamento, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('agendamentos')
+        .insert([agendamentoData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setAgendamentos(prev => [data, ...prev]);
+    } catch (error) {
+      console.error('Error adding agendamento:', error);
+      toast({
+        title: "Erro ao adicionar agendamento",
+        description: "Não foi possível salvar o agendamento.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteAgendamento = (id: number) => {
-    setAgendamentos(prev => prev.filter(agendamento => agendamento.id !== id));
+  const updateAgendamento = async (updatedAgendamento: Agendamento) => {
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .update(updatedAgendamento)
+        .eq('id', updatedAgendamento.id);
+
+      if (error) throw error;
+
+      setAgendamentos(prev => prev.map(agendamento => agendamento.id === updatedAgendamento.id ? updatedAgendamento : agendamento));
+    } catch (error) {
+      console.error('Error updating agendamento:', error);
+      toast({
+        title: "Erro ao atualizar agendamento",
+        description: "Não foi possível atualizar o agendamento.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const addTarefa = (tarefa: Tarefa) => {
-    setTarefas(prev => [...prev, tarefa]);
+  const deleteAgendamento = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('agendamentos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setAgendamentos(prev => prev.filter(agendamento => agendamento.id !== id));
+    } catch (error) {
+      console.error('Error deleting agendamento:', error);
+      toast({
+        title: "Erro ao excluir agendamento",
+        description: "Não foi possível excluir o agendamento.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const updateTarefa = (updatedTarefa: Tarefa) => {
-    setTarefas(prev => prev.map(tarefa => tarefa.id === updatedTarefa.id ? updatedTarefa : tarefa));
+  const addTarefa = async (tarefaData: Omit<Tarefa, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('tarefas')
+        .insert([{
+          titulo: tarefaData.titulo,
+          descricao: tarefaData.descricao,
+          status: tarefaData.status,
+          prioridade: tarefaData.prioridade,
+          data_vencimento: tarefaData.dataVencimento,
+          responsavel: tarefaData.responsavel,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newTarefa = {
+        id: data.id,
+        titulo: data.titulo,
+        descricao: data.descricao,
+        status: data.status,
+        prioridade: data.prioridade,
+        dataVencimento: data.data_vencimento,
+        responsavel: data.responsavel,
+      };
+
+      setTarefas(prev => [newTarefa, ...prev]);
+    } catch (error) {
+      console.error('Error adding tarefa:', error);
+      toast({
+        title: "Erro ao adicionar tarefa",
+        description: "Não foi possível salvar a tarefa.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteTarefa = (id: number) => {
-    setTarefas(prev => prev.filter(tarefa => tarefa.id !== id));
+  const updateTarefa = async (updatedTarefa: Tarefa) => {
+    try {
+      const { error } = await supabase
+        .from('tarefas')
+        .update({
+          titulo: updatedTarefa.titulo,
+          descricao: updatedTarefa.descricao,
+          status: updatedTarefa.status,
+          prioridade: updatedTarefa.prioridade,
+          data_vencimento: updatedTarefa.dataVencimento,
+          responsavel: updatedTarefa.responsavel,
+        })
+        .eq('id', updatedTarefa.id);
+
+      if (error) throw error;
+
+      setTarefas(prev => prev.map(tarefa => tarefa.id === updatedTarefa.id ? updatedTarefa : tarefa));
+    } catch (error) {
+      console.error('Error updating tarefa:', error);
+      toast({
+        title: "Erro ao atualizar tarefa",
+        description: "Não foi possível atualizar a tarefa.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteTarefa = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('tarefas')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setTarefas(prev => prev.filter(tarefa => tarefa.id !== id));
+    } catch (error) {
+      console.error('Error deleting tarefa:', error);
+      toast({
+        title: "Erro ao excluir tarefa",
+        description: "Não foi possível excluir a tarefa.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -194,6 +381,7 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       leads,
       agendamentos,
       tarefas,
+      loading,
       addLead,
       updateLead,
       deleteLead,
