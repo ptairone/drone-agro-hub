@@ -1,10 +1,17 @@
-import { Calendar, Plus, Clock, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { Calendar, Plus, Clock, MapPin, Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 
 const Agendamentos = () => {
+  const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
+  const [viewingAgendamento, setViewingAgendamento] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+
   const agendamentos = [
     {
       id: 1,
@@ -51,6 +58,26 @@ const Agendamentos = () => {
     }
   };
 
+  const handleEdit = (agendamento: any) => {
+    setEditingAgendamento(agendamento);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleView = (agendamento: any) => {
+    setViewingAgendamento(agendamento);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingAgendamento(null);
+    setIsEditDialogOpen(false);
+  };
+
+  const handleCloseView = () => {
+    setViewingAgendamento(null);
+    setIsViewDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -94,14 +121,117 @@ const Agendamentos = () => {
               <div className="text-right space-y-2">
                 <p className="text-lg font-bold text-foreground">{agendamento.valor}</p>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">Editar</Button>
-                  <Button size="sm">Ver Detalhes</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleEdit(agendamento)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleView(agendamento)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Ver Detalhes
+                  </Button>
                 </div>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      {/* Modal de Edição */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Agendamento</DialogTitle>
+            <DialogDescription>
+              Modifique os dados do agendamento para {editingAgendamento?.cliente}
+            </DialogDescription>
+          </DialogHeader>
+          {editingAgendamento && (
+            <AgendamentoForm 
+              agendamento={editingAgendamento}
+              onClose={handleCloseEdit}
+              isEdit={true}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalhes */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Agendamento</DialogTitle>
+            <DialogDescription>
+              Informações completas do agendamento
+            </DialogDescription>
+          </DialogHeader>
+          {viewingAgendamento && (
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Cliente</label>
+                  <p className="text-lg font-semibold">{viewingAgendamento.cliente}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Status</label>
+                  <div className="mt-1">
+                    <Badge className={getStatusColor(viewingAgendamento.status)}>
+                      {viewingAgendamento.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Serviço</label>
+                  <p className="text-base">{viewingAgendamento.servico}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Valor</label>
+                  <p className="text-lg font-bold text-primary">{viewingAgendamento.valor}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Data</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>{new Date(viewingAgendamento.data).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Horário</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span>{viewingAgendamento.hora}</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Endereço</label>
+                <div className="flex items-center gap-2 mt-1">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{viewingAgendamento.endereco}</span>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button onClick={() => {
+                  handleCloseView();
+                  handleEdit(viewingAgendamento);
+                }}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar Agendamento
+                </Button>
+                <Button variant="outline" onClick={handleCloseView}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
