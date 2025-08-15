@@ -2,6 +2,7 @@ import { Calendar, Plus, Clock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 
 const Agendamentos = () => {
   const agendamentos = [
@@ -57,10 +58,7 @@ const Agendamentos = () => {
           <h1 className="text-3xl font-bold text-foreground">Agendamentos</h1>
           <p className="text-muted-foreground">Gerencie seus serviços de drone agrícola</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Agendamento
-        </Button>
+        <AgendamentoForm />
       </div>
 
       <div className="grid gap-4">
