@@ -1,4 +1,4 @@
-import { Calendar, CheckSquare, Users, BarChart3, Plane } from 'lucide-react';
+import { Calendar, CheckSquare, Users, BarChart3, Plane, Cloud } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +22,11 @@ const menuItems = [
     title: 'Leads',
     icon: Users,
     href: '/leads',
+  },
+  {
+    title: 'Clima',
+    icon: Cloud,
+    href: '/clima',
   },
 ];
 
