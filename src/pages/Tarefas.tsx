@@ -1,10 +1,11 @@
-import { Plus, CheckCircle, Clock, AlertCircle, Edit } from 'lucide-react';
+import { Plus, CheckCircle, Clock, AlertCircle, Edit, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { TarefaForm } from '@/components/forms/TarefaForm';
 import { useToast } from '@/hooks/use-toast';
 
@@ -55,7 +56,9 @@ const Tarefas = () => {
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTarefa, setEditingTarefa] = useState<any>(null);
+  const [deletingTarefa, setDeletingTarefa] = useState<any>(null);
 
   const getPrioridadeColor = (prioridade: string) => {
     switch (prioridade) {
@@ -121,6 +124,28 @@ const Tarefas = () => {
         ? { ...tarefa, status: tarefa.status === 'concluida' ? 'pendente' : 'concluida' }
         : tarefa
     ));
+  };
+
+  const handleDelete = (tarefa: any) => {
+    setDeletingTarefa(tarefa);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingTarefa) {
+      setTarefas(tarefas.filter(t => t.id !== deletingTarefa.id));
+      toast({
+        title: "Tarefa excluída",
+        description: `A tarefa "${deletingTarefa.titulo}" foi excluída com sucesso.`,
+      });
+      setDeletingTarefa(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handleCloseDelete = () => {
+    setDeletingTarefa(null);
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -189,6 +214,14 @@ const Tarefas = () => {
                   Editar
                 </Button>
                 <Button size="sm">Detalhes</Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => handleDelete(tarefa)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir
+                </Button>
               </div>
             </div>
           </Card>
@@ -212,6 +245,25 @@ const Tarefas = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a tarefa "{deletingTarefa?.titulo}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

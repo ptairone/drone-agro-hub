@@ -1,9 +1,10 @@
-import { Plus, Phone, Mail, Calendar, TrendingUp, Edit } from 'lucide-react';
+import { Plus, Phone, Mail, Calendar, TrendingUp, Edit, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { LeadForm } from '@/components/forms/LeadForm';
 import { useToast } from '@/hooks/use-toast';
 
@@ -74,7 +75,9 @@ const Leads = () => {
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<any>(null);
+  const [deletingLead, setDeletingLead] = useState<any>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -135,6 +138,28 @@ const Leads = () => {
   const openEditDialog = (lead: any) => {
     setEditingLead(lead);
     setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (lead: any) => {
+    setDeletingLead(lead);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingLead) {
+      setLeads(leads.filter(l => l.id !== deletingLead.id));
+      toast({
+        title: "Lead excluído",
+        description: `O lead "${deletingLead.nome}" foi excluído com sucesso.`,
+      });
+      setDeletingLead(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handleCloseDelete = () => {
+    setDeletingLead(null);
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -201,13 +226,21 @@ const Leads = () => {
               
               <div className="text-right space-y-2">
                 <p className="text-lg font-bold text-foreground">{lead.valorPotencial}</p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openEditDialog(lead)}>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Editar
-                  </Button>
-                  <Button size="sm">Acompanhar</Button>
-                </div>
+                 <div className="flex gap-2">
+                   <Button variant="outline" size="sm" onClick={() => openEditDialog(lead)}>
+                     <Edit className="h-4 w-4 mr-1" />
+                     Editar
+                   </Button>
+                   <Button size="sm">Acompanhar</Button>
+                   <Button 
+                     variant="destructive" 
+                     size="sm" 
+                     onClick={() => handleDelete(lead)}
+                   >
+                     <Trash2 className="h-4 w-4 mr-1" />
+                     Excluir
+                   </Button>
+                 </div>
               </div>
             </div>
           </Card>
@@ -231,6 +264,25 @@ const Leads = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o lead "{deletingLead?.nome}"? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

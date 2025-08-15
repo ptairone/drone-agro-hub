@@ -1,18 +1,16 @@
 import { useState } from 'react';
-import { Calendar, Plus, Clock, MapPin, Edit, Eye } from 'lucide-react';
+import { Calendar, Plus, Clock, MapPin, Edit, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
+import { useToast } from '@/hooks/use-toast';
 
 const Agendamentos = () => {
-  const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
-  const [viewingAgendamento, setViewingAgendamento] = useState<any>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-
-  const agendamentos = [
+  const { toast } = useToast();
+  const [agendamentos, setAgendamentos] = useState([
     {
       id: 1,
       cliente: "Fazenda São João",
@@ -43,7 +41,15 @@ const Agendamentos = () => {
       status: "confirmado",
       valor: "R$ 3.200,00"
     },
-  ];
+  ]);
+  
+  const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
+  const [viewingAgendamento, setViewingAgendamento] = useState<any>(null);
+  const [deletingAgendamento, setDeletingAgendamento] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -76,6 +82,28 @@ const Agendamentos = () => {
   const handleCloseView = () => {
     setViewingAgendamento(null);
     setIsViewDialogOpen(false);
+  };
+
+  const handleDelete = (agendamento: any) => {
+    setDeletingAgendamento(agendamento);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingAgendamento) {
+      setAgendamentos(agendamentos.filter(a => a.id !== deletingAgendamento.id));
+      toast({
+        title: "Agendamento excluído",
+        description: `O agendamento de ${deletingAgendamento.cliente} foi excluído com sucesso.`,
+      });
+      setDeletingAgendamento(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handleCloseDelete = () => {
+    setDeletingAgendamento(null);
+    setIsDeleteDialogOpen(false);
   };
 
   return (
@@ -135,6 +163,14 @@ const Agendamentos = () => {
                   >
                     <Eye className="h-4 w-4 mr-1" />
                     Ver Detalhes
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => handleDelete(agendamento)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir
                   </Button>
                 </div>
               </div>
@@ -232,6 +268,25 @@ const Agendamentos = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o agendamento de {deletingAgendamento?.cliente}? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseDelete}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
