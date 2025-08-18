@@ -255,20 +255,30 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const addAgendamento = async (agendamentoData: Omit<Agendamento, 'id'>) => {
     try {
+      // Garantir que apenas colunas existentes sejam enviadas ao banco
+      const payload = {
+        cliente: (agendamentoData as any).cliente,
+        servico: (agendamentoData as any).servico,
+        data: (agendamentoData as any).data,
+        hora: (agendamentoData as any).hora,
+        status: (agendamentoData as any).status ?? 'agendado',
+        observacoes: (agendamentoData as any).observacoes,
+      };
+
       const { data, error } = await supabase
         .from('agendamentos')
-        .insert([agendamentoData])
+        .insert([payload])
         .select()
         .single();
 
       if (error) throw error;
 
       setAgendamentos(prev => [data, ...prev]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding agendamento:', error);
       toast({
         title: "Erro ao adicionar agendamento",
-        description: "Não foi possível salvar o agendamento.",
+        description: error?.message || "Não foi possível salvar o agendamento.",
         variant: "destructive",
       });
     }
@@ -276,19 +286,29 @@ export const DataProvider = ({ children }: DataProviderProps) => {
 
   const updateAgendamento = async (updatedAgendamento: Agendamento) => {
     try {
+      // Atualizar somente colunas válidas da tabela
+      const payload = {
+        cliente: (updatedAgendamento as any).cliente,
+        servico: (updatedAgendamento as any).servico,
+        data: (updatedAgendamento as any).data,
+        hora: (updatedAgendamento as any).hora,
+        status: (updatedAgendamento as any).status,
+        observacoes: (updatedAgendamento as any).observacoes,
+      };
+
       const { error } = await supabase
         .from('agendamentos')
-        .update(updatedAgendamento)
-        .eq('id', updatedAgendamento.id);
+        .update(payload)
+        .eq('id', (updatedAgendamento as any).id);
 
       if (error) throw error;
 
-      setAgendamentos(prev => prev.map(agendamento => agendamento.id === updatedAgendamento.id ? updatedAgendamento : agendamento));
-    } catch (error) {
+      setAgendamentos(prev => prev.map(agendamento => agendamento.id === (updatedAgendamento as any).id ? { ...agendamento, ...payload, id: (updatedAgendamento as any).id } : agendamento));
+    } catch (error: any) {
       console.error('Error updating agendamento:', error);
       toast({
         title: "Erro ao atualizar agendamento",
-        description: "Não foi possível atualizar o agendamento.",
+        description: error?.message || "Não foi possível atualizar o agendamento.",
         variant: "destructive",
       });
     }
