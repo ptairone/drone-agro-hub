@@ -34,6 +34,7 @@ import { CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useData } from '@/context/DataContext';
 
 const formSchema = z.object({
   cliente: z.string().min(2, 'Cliente é obrigatório'),
@@ -42,8 +43,6 @@ const formSchema = z.object({
     required_error: 'Data é obrigatória',
   }),
   hora: z.string().min(1, 'Hora é obrigatória'),
-  endereco: z.string().min(5, 'Endereço é obrigatório'),
-  valor: z.string().min(1, 'Valor é obrigatório'),
   observacoes: z.string().optional(),
 });
 
@@ -57,6 +56,7 @@ interface AgendamentoFormProps {
 export function AgendamentoForm({ onSubmit, agendamento, onClose, isEdit = false }: AgendamentoFormProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { addAgendamento, updateAgendamento } = useData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,8 +64,6 @@ export function AgendamentoForm({ onSubmit, agendamento, onClose, isEdit = false
       cliente: '',
       servico: '',
       hora: '',
-      endereco: '',
-      valor: '',
       observacoes: '',
     },
   });
@@ -78,37 +76,43 @@ export function AgendamentoForm({ onSubmit, agendamento, onClose, isEdit = false
         servico: agendamento.servico || '',
         data: agendamento.data ? new Date(agendamento.data) : undefined,
         hora: agendamento.hora || '',
-        endereco: agendamento.endereco || '',
-        valor: agendamento.valor || '',
         observacoes: agendamento.observacoes || '',
       });
     }
   }, [isEdit, agendamento, form]);
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    const agendamentoData = {
-      ...values,
-      data: format(values.data, 'yyyy-MM-dd'),
-      status: isEdit ? agendamento?.status || 'pendente' : 'pendente',
-      id: isEdit ? agendamento?.id : Date.now(),
-    };
-    
-    if (onSubmit) {
-      onSubmit(agendamentoData);
-    }
-    
-    toast({
-      title: isEdit ? 'Agendamento atualizado!' : 'Agendamento criado!',
-      description: isEdit 
-        ? 'O agendamento foi atualizado com sucesso.'
-        : 'O agendamento foi criado com sucesso.',
-    });
-    
-    if (!isEdit) {
-      form.reset();
-      setOpen(false);
-    } else if (onClose) {
-      onClose();
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const agendamentoData = {
+        cliente: values.cliente,
+        servico: values.servico,
+        data: format(values.data, 'yyyy-MM-dd'),
+        hora: values.hora,
+        status: isEdit ? agendamento?.status || 'agendado' : 'agendado',
+        observacoes: values.observacoes || '',
+      };
+      
+      if (isEdit) {
+        await updateAgendamento({ ...agendamentoData, id: agendamento.id });
+      } else {
+        await addAgendamento(agendamentoData);
+      }
+      
+      toast({
+        title: isEdit ? 'Agendamento atualizado!' : 'Agendamento criado!',
+        description: isEdit 
+          ? 'O agendamento foi atualizado com sucesso.'
+          : 'O agendamento foi criado com sucesso.',
+      });
+      
+      if (!isEdit) {
+        form.reset();
+        setOpen(false);
+      } else if (onClose) {
+        onClose();
+      }
+    } catch (error) {
+      // Erro já tratado no DataContext
     }
   };
 
@@ -216,38 +220,6 @@ export function AgendamentoForm({ onSubmit, agendamento, onClose, isEdit = false
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="endereco"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Endereço completo da propriedade..."
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="valor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Valor</FormLabel>
-                  <FormControl>
-                    <Input placeholder="R$ 0,00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
 
           <FormField
             control={form.control}
@@ -398,38 +370,6 @@ export function AgendamentoForm({ onSubmit, agendamento, onClose, isEdit = false
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="endereco"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Endereço completo da propriedade..."
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="valor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor</FormLabel>
-                    <FormControl>
-                      <Input placeholder="R$ 0,00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
 
             <FormField
               control={form.control}
