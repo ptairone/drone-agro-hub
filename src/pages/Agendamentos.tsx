@@ -7,41 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AgendamentoForm } from '@/components/forms/AgendamentoForm';
 import { useToast } from '@/hooks/use-toast';
+import { useData } from '@/context/DataContext';
 
 const Agendamentos = () => {
   const { toast } = useToast();
-  const [agendamentos, setAgendamentos] = useState([
-    {
-      id: 1,
-      cliente: "Fazenda São João",
-      servico: "Pulverização de Defensivos",
-      data: "2024-01-15",
-      hora: "08:00",
-      endereco: "Zona Rural, Ribeirão Preto - SP",
-      status: "confirmado",
-      valor: "R$ 2.500,00"
-    },
-    {
-      id: 2,
-      cliente: "Sítio da Serra",
-      servico: "Mapeamento Topográfico",
-      data: "2024-01-15",
-      hora: "10:30",
-      endereco: "Estrada Municipal, Franca - SP",
-      status: "pendente",
-      valor: "R$ 1.800,00"
-    },
-    {
-      id: 3,
-      cliente: "Agro Campos",
-      servico: "Monitoramento de Pragas",
-      data: "2024-01-16",
-      hora: "14:00",
-      endereco: "Fazenda Grande, Araraquara - SP",
-      status: "confirmado",
-      valor: "R$ 3.200,00"
-    },
-  ]);
+  const { agendamentos, updateAgendamento, deleteAgendamento } = useData();
   
   const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
   const [viewingAgendamento, setViewingAgendamento] = useState<any>(null);
@@ -89,13 +59,9 @@ const Agendamentos = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingAgendamento) {
-      setAgendamentos(agendamentos.filter(a => a.id !== deletingAgendamento.id));
-      toast({
-        title: "Agendamento excluído",
-        description: `O agendamento de ${deletingAgendamento.cliente} foi excluído com sucesso.`,
-      });
+      await deleteAgendamento(deletingAgendamento.id);
       setDeletingAgendamento(null);
       setIsDeleteDialogOpen(false);
     }
@@ -141,13 +107,13 @@ const Agendamentos = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    {agendamento.endereco}
+                    {agendamento.observacoes || 'Endereço não informado'}
                   </div>
                 </div>
               </div>
               
               <div className="text-right space-y-2">
-                <p className="text-lg font-bold text-foreground">{agendamento.valor}</p>
+                <p className="text-lg font-bold text-foreground">R$ 0,00</p>
                 <div className="flex gap-2">
                   <Button 
                     variant="outline" 

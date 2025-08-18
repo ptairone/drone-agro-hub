@@ -8,51 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { TarefaForm } from '@/components/forms/TarefaForm';
 import { useToast } from '@/hooks/use-toast';
+import { useData } from '@/context/DataContext';
 
 const Tarefas = () => {
   const { toast } = useToast();
-  const [tarefas, setTarefas] = useState([
-    {
-      id: 1,
-      titulo: "Verificar equipamentos antes do voo",
-      descricao: "Inspeção completa dos drones antes do serviço na Fazenda São João",
-      prioridade: "alta",
-      status: "pendente",
-      dataVencimento: "2024-01-15",
-      responsavel: "João Silva",
-      projeto: "Fazenda São João"
-    },
-    {
-      id: 2,
-      titulo: "Preparar relatório de pulverização",
-      descricao: "Compilar dados do último serviço realizado",
-      prioridade: "média",
-      status: "em_andamento",
-      dataVencimento: "2024-01-16",
-      responsavel: "Maria Santos",
-      projeto: "Sítio da Serra"
-    },
-    {
-      id: 3,
-      titulo: "Atualizar mapeamento GPS",
-      descricao: "Inserir novas coordenadas no sistema",
-      prioridade: "baixa",
-      status: "concluida",
-      dataVencimento: "2024-01-14",
-      responsavel: "Carlos Oliveira",
-      projeto: "Agro Campos"
-    },
-    {
-      id: 4,
-      titulo: "Calibrar sensores de umidade",
-      descricao: "Manutenção preventiva dos equipamentos",
-      prioridade: "alta",
-      status: "pendente",
-      dataVencimento: "2024-01-17",
-      responsavel: "Ana Costa",
-      projeto: "Geral"
-    },
-  ]);
+  const { tarefas, addTarefa, updateTarefa, deleteTarefa } = useData();
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -86,31 +46,15 @@ const Tarefas = () => {
     }
   };
 
-  const handleCreateTarefa = (data: any) => {
-    const newTarefa = {
-      id: tarefas.length + 1,
-      ...data,
-    };
-    setTarefas([...tarefas, newTarefa]);
+  const handleCreateTarefa = async (data: any) => {
+    await addTarefa(data);
     setIsCreateDialogOpen(false);
-    toast({
-      title: "Tarefa criada com sucesso!",
-      description: `Tarefa "${data.titulo}" foi adicionada ao sistema.`,
-    });
   };
 
-  const handleEditTarefa = (data: any) => {
-    setTarefas(tarefas.map(tarefa => 
-      tarefa.id === editingTarefa.id 
-        ? { ...tarefa, ...data }
-        : tarefa
-    ));
+  const handleEditTarefa = async (data: any) => {
+    await updateTarefa({ ...editingTarefa, ...data });
     setIsEditDialogOpen(false);
     setEditingTarefa(null);
-    toast({
-      title: "Tarefa atualizada com sucesso!",
-      description: `Tarefa "${data.titulo}" foi atualizada.`,
-    });
   };
 
   const openEditDialog = (tarefa: any) => {
@@ -118,12 +62,12 @@ const Tarefas = () => {
     setIsEditDialogOpen(true);
   };
 
-  const toggleTarefaStatus = (id: number) => {
-    setTarefas(tarefas.map(tarefa => 
-      tarefa.id === id 
-        ? { ...tarefa, status: tarefa.status === 'concluida' ? 'pendente' : 'concluida' }
-        : tarefa
-    ));
+  const toggleTarefaStatus = async (id: number) => {
+    const tarefa = tarefas.find(t => t.id === id);
+    if (tarefa) {
+      const newStatus = tarefa.status === 'concluida' ? 'pendente' : 'concluida';
+      await updateTarefa({ ...tarefa, status: newStatus });
+    }
   };
 
   const handleDelete = (tarefa: any) => {
@@ -131,13 +75,9 @@ const Tarefas = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deletingTarefa) {
-      setTarefas(tarefas.filter(t => t.id !== deletingTarefa.id));
-      toast({
-        title: "Tarefa excluída",
-        description: `A tarefa "${deletingTarefa.titulo}" foi excluída com sucesso.`,
-      });
+      await deleteTarefa(deletingTarefa.id);
       setDeletingTarefa(null);
       setIsDeleteDialogOpen(false);
     }
@@ -200,7 +140,7 @@ const Tarefas = () => {
                 <p className="text-muted-foreground">{tarefa.descricao}</p>
                 
                 <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                  <span>Projeto: <span className="text-foreground">{tarefa.projeto}</span></span>
+                  <span>Projeto: <span className="text-foreground">Projeto Geral</span></span>
                   <span>Responsável: <span className="text-foreground">{tarefa.responsavel}</span></span>
                   <span>Vencimento: <span className="text-foreground">
                     {new Date(tarefa.dataVencimento).toLocaleDateString('pt-BR')}
