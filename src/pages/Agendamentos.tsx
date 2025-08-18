@@ -11,7 +11,7 @@ import { useData } from '@/context/DataContext';
 
 const Agendamentos = () => {
   const { toast } = useToast();
-  const { agendamentos, updateAgendamento, deleteAgendamento } = useData();
+  const { agendamentos, addAgendamento, updateAgendamento, deleteAgendamento } = useData();
   
   const [editingAgendamento, setEditingAgendamento] = useState<any>(null);
   const [viewingAgendamento, setViewingAgendamento] = useState<any>(null);
@@ -79,7 +79,7 @@ const Agendamentos = () => {
           <h1 className="text-3xl font-bold text-foreground">Agendamentos</h1>
           <p className="text-muted-foreground">Gerencie seus serviços de drone agrícola</p>
         </div>
-        <AgendamentoForm />
+        <AgendamentoForm onSubmit={async (data) => { await addAgendamento(data); }} />
       </div>
 
       <div className="grid gap-4">
@@ -159,6 +159,7 @@ const Agendamentos = () => {
               agendamento={editingAgendamento}
               onClose={handleCloseEdit}
               isEdit={true}
+              onSubmit={async (data) => { await updateAgendamento(data); }}
             />
           )}
         </DialogContent>

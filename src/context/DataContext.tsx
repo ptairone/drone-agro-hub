@@ -109,9 +109,32 @@ export const DataProvider = ({ children }: DataProviderProps) => {
       
       if (tarefasError) throw tarefasError;
       
-      setLeads(leadsData || []);
+      setLeads((leadsData || []).map((l: any) => ({
+        id: l.id,
+        nome: l.nome,
+        empresa: l.empresa,
+        email: l.email,
+        telefone: l.telefone,
+        status: l.status,
+        valorPotencial: l.valor_potencial,
+        fonte: l.fonte,
+        observacoes: l.observacoes,
+        hectares: l.hectares,
+        tipoCultura: l.tipo_cultura,
+        cidade: l.cidade,
+        localizacao: l.localizacao,
+        ultimoContato: l.ultimo_contato,
+      })));
       setAgendamentos(agendamentosData || []);
-      setTarefas(tarefasData || []);
+      setTarefas((tarefasData || []).map((t: any) => ({
+        id: t.id,
+        titulo: t.titulo,
+        descricao: t.descricao,
+        status: t.status,
+        prioridade: t.prioridade,
+        dataVencimento: t.data_vencimento,
+        responsavel: t.responsavel,
+      })));
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
